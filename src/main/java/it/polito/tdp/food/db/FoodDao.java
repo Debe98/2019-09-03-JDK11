@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import it.polito.tdp.food.model.Arco;
 import it.polito.tdp.food.model.Condiment;
 import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Portion;
@@ -75,7 +77,7 @@ public class FoodDao {
 	}
 	
 	public List<Portion> listAllPortions(){
-		String sql = "SELECT * FROM portion" ;
+		String sql = "SELECT * FROM `portion`" ;
 		try {
 			Connection conn = DBConnect.getConnection() ;
 
@@ -94,6 +96,85 @@ public class FoodDao {
 							res.getDouble("saturated_fats"),
 							res.getInt("food_code")
 							));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+
+	}
+	
+	public List<String> getVertex(int cal){
+		String sql = "SELECT DISTINCT `portion`.portion_display_name AS name\r\n" + 
+				"FROM `portion`\r\n" + 
+				"WHERE `portion`.calories < ?\r\n" + 
+				"ORDER BY `portion`.portion_display_name;" ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1, cal);
+			
+			List<String> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(res.getString("name").toLowerCase() );
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+
+	}
+	
+	public List<Arco> getArchi(int cal){
+		String sql = "SELECT p1.portion_display_name AS name1, p2.portion_display_name AS name2, COUNT(DISTINCT p1.food_code) AS peso\r\n" + 
+				"FROM `portion` AS p1, `portion` AS p2\r\n" + 
+				"WHERE p1.portion_display_name < p2.portion_display_name\r\n" + 
+				"	AND p1.food_code = p2.food_code\r\n" + 
+				"	AND p1.portion_display_name IN (\r\n" + 
+				"	SELECT DISTINCT `portion`.portion_display_name AS name\r\n" + 
+				"	FROM `portion`\r\n" + 
+				"	WHERE `portion`.calories < ?\r\n" + 
+				"	ORDER BY `portion`.portion_display_name)\r\n" + 
+				"	\r\n" + 
+				"	AND p2.portion_display_name IN (\r\n" + 
+				"	SELECT DISTINCT `portion`.portion_display_name AS name\r\n" + 
+				"	FROM `portion`\r\n" + 
+				"	WHERE `portion`.calories < ?\r\n" + 
+				"	ORDER BY `portion`.portion_display_name)\r\n" + 
+				"GROUP BY name1, name2;" ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1, cal);
+			st.setInt(2, cal);
+			
+			List<Arco> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(new Arco(res.getString("name1").toLowerCase(), res.getString("name2").toLowerCase(), res.getInt("peso")));
 				} catch (Throwable t) {
 					t.printStackTrace();
 				}

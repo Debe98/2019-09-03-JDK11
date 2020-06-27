@@ -5,7 +5,10 @@
 package it.polito.tdp.food;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.food.model.Arco;
 import it.polito.tdp.food.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -40,29 +43,94 @@ public class FoodController {
     private Button btnCammino; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxPorzioni"
-    private ComboBox<?> boxPorzioni; // Value injected by FXMLLoader
+    private ComboBox<String> boxPorzioni; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
 
     @FXML
     void doCammino(ActionEvent event) {
-    	txtResult.clear();
-    	txtResult.appendText("Cerco cammino peso massimo...");
+    	String raw = txtPassi.getText();
+    	int n;
+    	try {
+    		n = Integer.parseInt(raw);
+    		
+    	}
+    	catch (NumberFormatException e) {
+    		txtResult.appendText("Il parametro inserito non è un numero\n");
+    		return;
+    	}
+    	if (boxPorzioni.getItems().isEmpty()) {
+    	    txtResult.setText("Prima crea il grafico");
+    	    return;
+    	}
+    	if (boxPorzioni.getValue() == null) {
+    		txtResult.setText("Devi scegliere un'opzione");
+    	    return;
+    	}
+    	txtResult.setText("Cerco cammino peso massimo...");
+    	
+    	String value = boxPorzioni.getValue();
+    	
+    	List <String> lista = model.getListaPesoMax(n, value);
+    	int peso = model.getPesoMax();
+    	
+    	if (peso != -1) {
+    		txtResult.setText("Trovato cammino di peso "+peso+"\n");
+    		for (String s : lista) {
+    			txtResult.appendText(s+"\n");
+    		}
+    	}
+    	else
+    		txtResult.setText("Impossibile trovare il cammino richiesto");
     }
 
     @FXML
-    void doCorrelate(ActionEvent event) {
+    void doCorrelate(ActionEvent event) {  	
+    	if (boxPorzioni.getItems().isEmpty()) {
+    	    txtResult.setText("Prima crea il grafico");
+    	    return;
+    	}
+    	if (boxPorzioni.getValue() == null) {
+    		txtResult.setText("Devi scegliere un'opzione");
+    	    return;
+    	}
+    	String value = boxPorzioni.getValue();
+    	
     	txtResult.clear();
     	txtResult.appendText("Cerco porzioni correlate...");
     	
+    	List <Arco> vicini= model.getCorrelate(value);
+    	
+    	txtResult.setText("Trovati "+vicini.size()+" vicini:\n");
+    	for (Arco a : vicini) {
+    		txtResult.appendText(a.getVertice1()+" - "+a.getPeso()+"\n");
+    	}
+    	
     }
 
     @FXML
-    void doCreaGrafo(ActionEvent event) {
-    	txtResult.clear();
-    	txtResult.appendText("Creazione grafo...");
+    void doCreaGrafo(ActionEvent event) {   	
+    	String raw = txtCalorie.getText();
+    	int n;
+    	try {
+    		n = Integer.parseInt(raw);
+    		
+    	}
+    	catch (NumberFormatException e) {
+    		txtResult.appendText("Il parametro inserito non è un numero\n");
+    		return;
+    	}
     	
+    	txtResult.clear();
+    	txtResult.appendText("\nCreazione grafo...");
+    	model.creaGrafo(n);
+    	
+    	boxPorzioni.getItems().clear();
+    	boxPorzioni.getItems().addAll(model.getVertex(n));
+    	
+    	txtResult.clear();
+    	txtResult.appendText("Grafo creato!");
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
